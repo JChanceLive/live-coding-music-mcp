@@ -35,12 +35,34 @@ import { composeModule } from './tools/compose.js';
 import type { Envelope, ToolContext, HistoryEntry } from './tools/types.js';
 import { categorizeError, err, isEnvelope, ok } from './tools/types.js';
 import { readResource, resources as mcpResources } from './resources.js';
-import { join } from 'node:path';
+import { dirname, isAbsolute, join, resolve } from 'node:path';
 
-const configPath = './config.json';
-const config = existsSync(configPath)
+// Package root, derived WITHOUT `import.meta.url`. This file is compiled to CJS by
+// ts-jest (jest runs without --experimental-vm-modules), where `import.meta` is a parse
+// error that takes the whole suite down. `process.argv[1]` is the entry script —
+// `<root>/dist/index.js` for the stdio launch every MCP client actually uses — so its
+// parent directory is the package root. Falls back to cwd only when argv[1] is absent.
+const moduleRoot = process.argv[1] ? resolve(dirname(process.argv[1]), '..') : process.cwd();
+
+// Prefer the config that ships next to the code. The historical './config.json' stays as
+// a fallback, but it resolves against the *session's* cwd: a stdio MCP server inherits
+// whatever directory the client launched in, so that path almost never matched and the
+// defaults below silently governed instead.
+const configPath = [join(moduleRoot, 'config.json'), './config.json'].find(existsSync);
+const config = configPath
   ? JSON.parse(readFileSync(configPath, 'utf-8'))
   : { headless: false };
+
+// Where saved patterns live. A relative value resolves against the package root, NEVER
+// the cwd. PatternStore's constructor mkdir's this path at boot, so the previous
+// cwd-relative './patterns' dropped an empty `patterns/` directory into every directory
+// a session was ever started in — 107 of them on this machine, none ever written to.
+const patternsDir =
+  typeof config.patterns_dir === 'string' && config.patterns_dir
+    ? isAbsolute(config.patterns_dir)
+      ? config.patterns_dir
+      : resolve(moduleRoot, config.patterns_dir)
+    : join(moduleRoot, 'patterns');
 
 // Translate config.audio_analysis (snake_case in JSON) to the camelCase
 // AudioAnalysisConfig the analyzer expects. Invalid values are normalized
@@ -107,7 +129,7 @@ export class StrudelMCPServer {
     );
 
     this.controller = new StrudelController(config.headless, audioAnalysisConfig);
-    this.store = new PatternStore('./patterns');
+    this.store = new PatternStore(patternsDir);
     this.theory = new MusicTheory();
     this.generator = new PatternGenerator();
     this.geminiService = new GeminiService();
@@ -166,7 +188,7 @@ export class StrudelMCPServer {
       try {
         const content = await readResource(uri, {
           store: this.store,
-          examplesDir: join(process.cwd(), 'patterns', 'examples'),
+          examplesDir: join(moduleRoot, 'patterns', 'examples'),
         });
         return { contents: [content] };
       } catch (error: unknown) {

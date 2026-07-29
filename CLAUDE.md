@@ -1021,3 +1021,24 @@ See GitHub issues for UX improvements:
 - SQLite pattern store (replace JSON-per-file when catalogs cross thousands)
 - Improved modal scale detection accuracy
 - Per-module envelope migration (#140 was closed as won't-do; revisit if a specific module benefits)
+
+<!-- MEMORY:START -->
+# mcp-server
+
+_Last updated: 2026-07-29 | 9 active memories, 9 total_
+
+## Patterns & Conventions
+- Strudel MCP server (mcp-server/) runs independently of project context — when File Safety session starts, if any tool... [mcp-server, architecture, multi-project]
+- Config paths (config.json, patternsDir, examplesDir, screenshotDir) are anchored to moduleRoot derived from `process.... [strudel-mcp, config-resolution, module-root]
+- For vendored third-party repos like mcp-server (cloned upstream, no local commits, upstream-only remote), route follo... [multi-session, vendored-code, follow-ups, git-workflow, mcp-server]
+
+## Gotchas & Pitfalls
+- StrudelController (src/StrudelController.ts) spawns visible Chrome windows opening strudel.cc when headless: false is... [strudel-mcp, browser-automation, config]
+- Strudel MCP server's cwd-dependency is systemic across four sites—not two: (1) config loading in server.ts, (2) confi... [strudel-mcp, file-safety, s1, cwd-relative-paths, portability, scope-drift]
+- Jest runs tests in CommonJS mode despite the project being ESM with Node16 module resolution — static `import.meta.ur... [strudel-mcp, jest, module-system, esm-cjs-mismatch]
+- server.ts:40 in mcp-server uses cwd-relative ./config.json, preventing config load when MCP runs outside repo directo... [strudel, config-loading, mcp-server, coding-music, bug-root-cause]
+- mcp-server/ in ~/.claude is registered as a gitlink (submodule, mode 160000) — changes to mcp-server source are NOT b... [mcp-server, backup, gitlink, coding-music]
+- config.json loading in StrudelController.ts:40 used cwd-relative path (`./config.json`), causing configuration to fai... [strudel-mcp, config, cwd-relative]
+
+_For deeper context, use memory_search, memory_related, or memory_ask tools._
+<!-- MEMORY:END -->

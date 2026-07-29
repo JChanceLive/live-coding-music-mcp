@@ -1,4 +1,5 @@
 import { StrudelController } from '../../StrudelController';
+import * as os from 'os';
 import { chromium } from 'playwright';
 import { MockBrowser, MockPage, createMockPage } from '../utils/MockPlaywright';
 import { samplePatterns } from '../utils/TestFixtures';
@@ -1001,7 +1002,10 @@ describe('StrudelController', () => {
       const result = await controller.takeScreenshot();
 
       expect(result).toContain('Screenshot saved to');
-      expect(result).toContain('tmp');
+      // Asserts the actual contract: screenshots land under the OS temp dir, not the
+      // session's cwd. The old `toContain('tmp')` passed on `process.cwd()/tmp` but says
+      // nothing on macOS, where os.tmpdir() is `/var/folders/.../T`.
+      expect(result).toContain(os.tmpdir());
       expect(mockPage.screenshot).toHaveBeenCalled();
     });
 

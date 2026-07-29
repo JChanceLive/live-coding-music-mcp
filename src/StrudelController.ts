@@ -1,5 +1,6 @@
 import { chromium, Browser, Page } from 'playwright';
 import * as path from 'path';
+import * as os from 'os';
 import { promises as fs } from 'fs';
 import { AudioAnalyzer } from './AudioAnalyzer.js';
 import { PatternValidator, ValidationResult } from './utils/PatternValidator.js';
@@ -748,8 +749,10 @@ export class StrudelController {
     }
 
     try {
-      // Default to tmp/ directory for screenshots
-      const tmpDir = path.join(process.cwd(), 'tmp');
+      // Screenshots go to the OS temp dir, not `process.cwd()/tmp`. A stdio MCP server
+      // inherits the client's cwd, so the old path scattered `tmp/` dirs across whatever
+      // directory a session happened to start in — the same defect as the pattern store.
+      const tmpDir = path.join(os.tmpdir(), 'strudel-mcp');
       await fs.mkdir(tmpDir, { recursive: true });
 
       // If filename has no path component, save to tmp/
