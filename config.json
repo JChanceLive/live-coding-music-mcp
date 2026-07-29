@@ -1,7 +1,7 @@
 {
   "headless": false,
   "strudel_url": "https://strudel.cc/",
-  "patterns_dir": "/Users/josiahlachance/.claude/coding-music/patterns/saved",
+  "patterns_dir": "/Users/josiahlachance/Documents/Projects/Claude/terminal/coding-music/patterns/saved",
   "audio_analysis": {
     "fft_size": 2048,
     "smoothing": 0.8
